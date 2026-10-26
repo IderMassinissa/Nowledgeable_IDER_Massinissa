@@ -4,6 +4,16 @@ const port = 3000;
 
 app.use(express.json());
 
+// ===== Session 6 : middleware =====
+
+function loggerMiddleware(request, response, next) {
+  console.log("nouvelle requête entrante");
+  console.log(request.body);
+  next();
+}
+
+app.use(loggerMiddleware);
+
 // ===== Session 1 : Express et les requêtes GET =====
 
 app.get("/", (req, res) => {
@@ -67,7 +77,8 @@ app.post("/new-task", (req, res) => {
 app.post("/update-task/:id", (req, res) => {
   const task = tasks.find((t) => t.id === Number(req.params.id));
   if (req.body.title !== undefined) task.title = req.body.title;
-  if (req.body.description !== undefined) task.description = req.body.description;
+  if (req.body.description !== undefined)
+    task.description = req.body.description;
   if (req.body.isDone !== undefined) task.isDone = req.body.isDone;
   res.json(task);
 });
@@ -76,6 +87,11 @@ app.post("/delete-task/:id", (req, res) => {
   tasks = tasks.filter((t) => t.id !== Number(req.params.id));
   res.json(tasks);
 });
+
+// ===== Session 6 : fichiers statiques =====
+
+app.use(express.static("templates"));
+app.use(express.static("public"));
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
