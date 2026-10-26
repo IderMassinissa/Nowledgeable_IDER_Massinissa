@@ -1,0 +1,10 @@
+{
+  "name": "nowledgeable_ider_massinissa",
+  "version": "1.0.0",
+  "main": "app.js",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0",
+    "pg": "^8.16.0"
+  }
+}
