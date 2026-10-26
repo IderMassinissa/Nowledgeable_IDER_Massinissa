@@ -1,4 +1,10 @@
 const express = require("express");
+const crypto = require("crypto");
+const {
+  getRegisteredUsers,
+  newUserRegistered,
+  hashPassword,
+} = require("./inMemoryUserRepository");
 const app = express();
 const port = 3000;
 
@@ -13,6 +19,15 @@ function loggerMiddleware(request, response, next) {
 }
 
 app.use(loggerMiddleware);
+
+// ===== Session 7 : middleware qui affiche les headers =====
+
+function headersMiddleware(request, response, next) {
+  console.log(request.headers);
+  next();
+}
+
+app.use(headersMiddleware);
 
 // ===== Session 1 : Express et les requêtes GET =====
 
@@ -92,6 +107,63 @@ app.post("/delete-task/:id", (req, res) => {
 
 app.use(express.static("templates"));
 app.use(express.static("public"));
+
+// ===== Session 7 : système d'autorisation et d'authentification =====
+
+// Utilisateurs authentifiés : { token: { email } }
+const authenticatedUsers = {};
+
+function firewall(request, response, next) {
+  const unrestrictedUrls = ["/hello", "/authenticate", "/register"];
+
+  if (unrestrictedUrls.includes(request.url)) {
+    return next();
+  }
+
+  const token = request.headers.authorization;
+  if (!authenticatedUsers[token]) {
+    return response.sendStatus(403);
+  }
+  next();
+}
+
+app.use(firewall);
+
+app.get("/hello", (req, res) => {
+  res.send("<h1>hello</h1>");
+});
+
+app.get("/restricted1", (req, res) => {
+  res.json({ message: "topsecret" });
+});
+
+app.get("/restricted2", (req, res) => {
+  res.send("<h1>Admin space</h1>");
+});
+
+function checkCredentials(email, password) {
+  return getRegisteredUsers().find(
+    (user) => user.email === email && user.password === hashPassword(password)
+  );
+}
+
+app.post("/authenticate", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!checkCredentials(email, password)) {
+    return res.sendStatus(403);
+  }
+
+  const token = crypto.randomUUID();
+  authenticatedUsers[token] = { email: email };
+  res.send(token);
+});
+
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+  newUserRegistered(email, password);
+  res.send("utilisateur inscrit");
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
